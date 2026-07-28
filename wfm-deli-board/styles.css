@@ -1,0 +1,135 @@
+:root{
+  /* Brand palette, sampled from LogoGuidelines.pdf */
+  --navy:#0C233F;
+  --navy-deep:#081627;
+  --navy-soft:#1B3A5E;
+  --paper:#FAF7F1;      /* warm tint of brand white, used for cards */
+  --white:#FFFFFF;
+  --ink:#1B1F27;
+  --ink-soft:#5B5A55;
+
+  --font-display:'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body:'Montserrat', -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --fit:1; /* auto-shrink factor, set per slide by JS */
+}
+*{box-sizing:border-box;}
+html,body{
+  margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+  background:var(--navy-deep); color:var(--ink); font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+#app{position:relative; width:100vw; height:100vh; overflow:hidden;}
+
+/* ---------------- top chrome ---------------- */
+.topbar{
+  position:absolute; top:0; left:0; right:0; z-index:30;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:1.6vh 2.6vw; background:linear-gradient(180deg, rgba(8,22,39,.97), rgba(8,22,39,.8) 65%, transparent);
+}
+.brand img{height:9.5vh; display:block;}
+.clock{font-family:var(--font-body); font-weight:600; font-size:1.7vw; letter-spacing:.02em; color:var(--paper); text-align:right;}
+.clock .date{display:block; font-size:.9vw; font-weight:500; color:#B9C6D6; margin-top:.3vh; letter-spacing:.06em; text-transform:uppercase;}
+
+/* ---------------- promo pennant ---------------- */
+.pennant-wrap{position:absolute; top:0; right:8vw; z-index:35; width:12vw; min-width:160px; display:none; pointer-events:none;}
+.pennant-wrap.active{display:block;}
+.pennant-string{position:absolute; top:0; left:50%; width:2px; height:1.8vh; background:var(--paper); opacity:.6; transform:translateX(-50%);}
+.pennant{
+  margin-top:1.8vh; background:var(--navy); color:var(--paper); border:1px solid rgba(255,255,255,.25);
+  clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+  padding:1.8vh 1vw 3.2vh; text-align:center;
+  transform-origin: top center; animation: sway 4.6s ease-in-out infinite;
+  box-shadow:0 8px 20px rgba(0,0,0,.4);
+}
+.pennant .badge{font-family:var(--font-body); font-weight:700; font-size:.85vw; letter-spacing:.1em; text-transform:uppercase; color:#B9C6D6; display:block;}
+.pennant .title{font-family:var(--font-display); font-weight:700; font-size:1.2vw; line-height:1.15; margin-top:.5vh;}
+@keyframes sway{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}}
+
+/* ---------------- stage / slides ---------------- */
+.stage{position:absolute; inset:0; display:flex; height:100%; transition:transform .8s cubic-bezier(.65,0,.35,1);}
+.slide{
+  flex:0 0 100vw; height:100vh; position:relative; overflow:hidden;
+  display:flex; flex-direction:column;
+  padding:15vh 4vw 8vh;
+  background-color:var(--navy);
+  background-image: linear-gradient(180deg, rgba(8,22,39,.88), rgba(12,35,63,.72) 40%, rgba(8,22,39,.93));
+  background-size:cover; background-position:center;
+}
+.slide.has-photo{ background-image: linear-gradient(180deg, rgba(8,22,39,.82), rgba(12,35,63,.68) 45%, rgba(8,22,39,.92)), var(--slide-photo); }
+
+.cat-head{width:100%; text-align:center; margin-bottom:2.4vh; flex-shrink:0;}
+.cat-head h1{font-family:var(--font-display); font-weight:700; color:var(--white); font-size:6.6vw; margin:0; letter-spacing:.005em; line-height:1;}
+.cat-head .sub{font-family:var(--font-body); color:#CBD8E6; font-size:1.25vw; margin-top:1vh; font-weight:500; letter-spacing:.02em;}
+.cat-head .rule{width:6vw; height:2px; background:var(--white); opacity:.35; margin:1.4vh auto 0;}
+
+.cat-body{flex:1; display:flex; gap:2.4vw; min-height:0; align-items:stretch;}
+
+/* photo hero panel, used when a category has few items */
+.photo-panel{flex:0 0 36%; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.35); position:relative; background:var(--navy-soft);}
+.photo-panel img{width:100%; height:100%; object-fit:cover; display:block;}
+.photo-panel .caption{position:absolute; left:0; right:0; bottom:0; padding:1.4vh 1.2vw; background:linear-gradient(0deg, rgba(8,22,39,.85), transparent); color:var(--paper); font-family:var(--font-body); font-size:.95vw; font-weight:600; letter-spacing:.03em;}
+
+.items-panel{flex:1; min-height:0; display:grid; grid-template-columns:repeat(var(--cols,2), 1fr); gap:calc(1.6vh * var(--fit)) calc(1.6vw * var(--fit)); align-content:center;}
+
+.item{
+  background:var(--paper); border-radius:10px; padding:calc(1.6vh * var(--fit)) calc(1.5vw * var(--fit));
+  box-shadow:0 4px 12px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:calc(.4vh * var(--fit));
+  justify-content:center;
+}
+.item .top-row{display:flex; justify-content:space-between; align-items:baseline; gap:1vw;}
+.item h3{font-family:var(--font-display); font-size:calc(1.75vw * var(--fit)); margin:0; color:var(--navy); font-weight:700; line-height:1.15;}
+.item .price{font-family:var(--font-body); font-weight:700; font-size:calc(1.4vw * var(--fit)); color:var(--navy); white-space:nowrap; background:var(--white); padding:.1vh .8vw; border-radius:20px; border:1.5px solid var(--navy);}
+.item p{margin:0; font-size:calc(1.05vw * var(--fit)); line-height:1.32; color:var(--ink-soft); font-weight:500;}
+
+/* single big-photo layout when a category has just one item */
+.cat-body.solo{flex-direction:row-reverse;}
+.cat-body.solo .items-panel{grid-template-columns:1fr; align-content:center;}
+.cat-body.solo .item{padding:4vh 3vw;}
+.cat-body.solo .item h3{font-size:3vw;}
+.cat-body.solo .item p{font-size:1.5vw;}
+.cat-body.solo .item .price{font-size:2vw;}
+
+/* ---------------- welcome / promo full slides ---------------- */
+.welcome, .promo-slide{align-items:center; justify-content:center; text-align:center;}
+.welcome img{height:22vh; margin-bottom:2vh;}
+.welcome .greeting{font-family:var(--font-body); color:#B9C6D6; letter-spacing:.2em; text-transform:uppercase; font-size:1.1vw; font-weight:600;}
+.welcome .tagline{font-family:var(--font-display); font-style:italic; color:var(--paper); font-size:1.8vw; margin-top:2.6vh; max-width:60vw;}
+.promo-slide .badge{font-family:var(--font-body); color:#B9C6D6; letter-spacing:.2em; text-transform:uppercase; font-size:1.2vw; font-weight:700;}
+.promo-slide h1{font-family:var(--font-display); color:var(--white); font-size:4.6vw; margin:1vh 0; max-width:70vw;}
+.promo-slide p{font-family:var(--font-body); color:var(--paper); opacity:.9; font-size:1.4vw; max-width:55vw;}
+.promo-slide .price{font-family:var(--font-body); font-weight:700; color:var(--white); font-size:2.2vw; margin-top:2.4vh; border:2px solid var(--white); padding:1vh 2.2vw; border-radius:44px;}
+
+/* ---------------- bottom chrome ---------------- */
+.bottombar{
+  position:absolute; bottom:0; left:0; right:0; z-index:30;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:1.8vh 2.6vw; background:linear-gradient(0deg, rgba(8,22,39,.97), rgba(8,22,39,.8) 65%, transparent);
+  color:#B9C6D6; font-size:1vw; font-weight:500;
+}
+.dots{display:flex; gap:.6vw;}
+.dot{width:.65vw; height:.65vw; min-width:7px; min-height:7px; border-radius:50%; background:rgba(255,255,255,.25); transition:background .3s, transform .3s;}
+.dot.on{background:var(--white); transform:scale(1.3);}
+.contact b{color:var(--white);}
+.pause-pill{
+  position:absolute; top:1.8vh; left:50%; transform:translateX(-50%); z-index:40;
+  background:rgba(8,22,39,.9); color:var(--white); font-size:.9vw; font-weight:600;
+  padding:.6vh 1.5vw; border-radius:20px; display:none; border:1px solid rgba(255,255,255,.35);
+}
+.pause-pill.show{display:block;}
+
+/* ---------------- fullscreen / kiosk gate ---------------- */
+.fs-gate{
+  position:fixed; inset:0; z-index:999; background:var(--navy-deep);
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  transition:opacity .35s ease, visibility .35s ease; opacity:1; visibility:visible;
+  cursor:pointer;
+}
+.fs-gate.hide{opacity:0; visibility:hidden; pointer-events:none;}
+.fs-gate-inner img{height:14vh; max-height:120px; margin-bottom:3vh;}
+.fs-gate-text{
+  font-family:var(--font-body); color:var(--paper); font-size:4vw; font-weight:600;
+  letter-spacing:.03em; animation:pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.55;}50%{opacity:1;}}
+@media (min-width:700px){ .fs-gate-text{font-size:1.6rem;} }

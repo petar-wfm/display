@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>West Falmouth Market — Deli Counter Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0C233F">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand"><img src="assets/logo.png" alt="West Falmouth Market — Est. 1902 — Cape Cod"></div>
+    <div class="clock" id="clock">--:--<span class="date" id="dateline">-</span></div>
+  </div>
+
+  <div class="pennant-wrap" id="ribbonPennant">
+    <div class="pennant-string"></div>
+    <div class="pennant">
+      <span class="badge" id="ribbonBadge">Today Only</span>
+      <div class="title" id="ribbonTitle">Promo title</div>
+    </div>
+  </div>
+
+  <div class="pause-pill" id="pausePill">Paused — tap to resume</div>
+
+  <div class="stage" id="stage"></div>
+
+  <div class="bottombar">
+    <div class="dots" id="dots"></div>
+    <div class="contact"><b>623 West Falmouth Hwy</b> &nbsp;·&nbsp; (508) 548-1139 &nbsp;·&nbsp; westfalmouthmarket.com</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FULLSCREEN / KIOSK GATE
+     Mobile browsers (incl. Chrome on older Android like Android 5)
+     will only grant fullscreen after a real tap/click, so this
+     covers the screen until the first touch, then requests
+     fullscreen and gets out of the way. It reappears automatically
+     if the browser ever drops out of fullscreen (e.g. after Chrome
+     reloads the page on a network hiccup).
+     ============================================================ -->
+<div class="fs-gate" id="fsGate">
+  <div class="fs-gate-inner">
+    <img src="assets/logo.png" alt="West Falmouth Market">
+    <div class="fs-gate-text">Tap anywhere to start the display</div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

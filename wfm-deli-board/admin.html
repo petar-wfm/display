@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Deli Board — Management Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- ================= LOGIN GATE ================= -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <img src="assets/logo.png" alt="West Falmouth Market">
+    <h1>Deli Board — Management</h1>
+    <p>Enter the admin password to view and edit the menu, promos, and settings. Changes here save straight to the website, so every TV/screen showing the board picks them up within a few minutes.</p>
+    <input type="password" id="pwInput" placeholder="Admin password" autocomplete="current-password">
+    <div class="login-error" id="loginError"></div>
+    <button class="btn wide" id="loginBtn">Unlock</button>
+  </div>
+</div>
+
+<!-- ================= MAIN PANEL ================= -->
+<div id="panel" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="West Falmouth Market">
+      <h1>Deli Board — Management</h1>
+    </div>
+    <div class="status" id="statusLine">Loading…</div>
+    <div class="actions">
+      <button class="btn ghost light small" id="reloadBtn">Reload from server</button>
+      <button class="btn ghost light small" id="viewBoardBtn">View board</button>
+      <button class="btn ghost light small" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <p class="hint">Edit item names, descriptions and prices, add whole new categories, manage promos, and adjust timing/daypart settings below — then hit <b>Save changes</b>. This writes one shared file on the server, so it's the same for every screen showing the board (no more per-device drift). Use Export as an occasional backup.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="menu">Menu</button>
+      <button class="tab-btn" data-tab="promos">Promos</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+      <button class="tab-btn" data-tab="backup">Backup</button>
+    </div>
+
+    <div class="tab-pane active" id="pane-menu">
+      <div id="categoryList"></div>
+      <button class="btn wide" id="addCategoryBtn">+ Add category</button>
+    </div>
+
+    <div class="tab-pane" id="pane-promos">
+      <p class="hint"><b>Ribbon</b> promos show as a small hanging flag on every slide. <b>Full slide</b> promos get their own turn in the rotation. Turn a promo off instead of deleting it if you'll reuse it later.</p>
+      <div id="promoList"></div>
+      <button class="btn wide" id="addPromoBtn">+ Add promo</button>
+    </div>
+
+    <div class="tab-pane" id="pane-settings">
+      <div class="settings-grid">
+        <div><label>Seconds per slide</label><input type="number" id="setDuration" min="4" max="60" step="1"></div>
+        <div><label>Show a promo slide every N slides</label><input type="number" id="setPromoFreq" min="1" max="10" step="1"></div>
+        <div><label>Show welcome slide</label><select id="setShowWelcome"><option value="1">Yes</option><option value="0">No</option></select></div>
+        <div><label>Hide Breakfast outside its hours</label>
+          <div class="toggle-row"><input type="checkbox" id="setHideBreakfast"><span>Enabled</span></div>
+        </div>
+        <div><label>Breakfast starts</label><input type="text" id="setBreakfastStart" placeholder="07:00"></div>
+        <div><label>Breakfast ends (Mon–Sat)</label><input type="text" id="setBreakfastEndWeekday" placeholder="11:00"></div>
+        <div><label>Breakfast ends (Sunday)</label><input type="text" id="setBreakfastEndSunday" placeholder="12:00"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="pane-backup">
+      <p class="hint">Export a backup of the whole board (menu, promos, settings) as a file you can keep, or re-import later. "Reset to built-in defaults" reloads the original menu that ships with the site (from <code>data.js</code>) into the editor below — remember to hit Save changes afterward to actually publish that reset.</p>
+      <div class="row-flex">
+        <button class="btn" id="exportBtn">Export backup (.json)</button>
+        <button class="btn ghost" id="importBtn">Import backup…</button>
+        <input type="file" id="importFile" accept="application/json">
+        <button class="btn danger" id="resetBtn">Reset to built-in defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="savebar">
+    <div class="msg" id="saveMsg"></div>
+    <button class="btn wide" id="saveBtn" style="max-width:260px;">Save changes</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

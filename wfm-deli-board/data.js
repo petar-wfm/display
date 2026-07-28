@@ -1,0 +1,163 @@
+/* ============================================================
+   WEST FALMOUTH MARKET — DELI BOARD DATA (built-in defaults)
+   Built directly from West_Falmouth_Market_Deli_Menu_Menu_.csv
+
+   This is the fallback every screen uses until someone saves
+   changes from admin.html (the management panel) — after that,
+   the live server copy takes over. Edit this file and redeploy
+   to change the *baseline* defaults permanently, or use
+   admin.html for day-to-day menu/price/promo changes from any
+   browser (see README.md, section 5, for the one-time setup).
+   ============================================================ */
+
+const BOARD_DATA = {
+
+  settings: {
+    slideDurationSec: 12,        // how long each slide stays up
+    promoFrequency: 3,           // show a full-slide promo every N category slides
+    showWelcome: true,           // show the welcome/greeting slide in the rotation
+
+    // Breakfast/lunch daypart logic:
+    // The Breakfast category only appears on the board during these windows.
+    // Times are 24-hour "HH:MM", using the TV's local clock.
+    daypart: {
+      hideBreakfastOutsideWindow: true,
+      breakfastStart: "07:00",
+      breakfastEndWeekday: "11:00",   // Mon–Sat
+      breakfastEndSunday: "12:00"     // Sun
+    }
+  },
+
+  // One entry per photo you can drop in assets/images/ — see README.md.
+  // If a file isn't there yet, the slide just uses the navy brand gradient.
+  categories: [
+    {
+      id: "breakfast",
+      name: "Breakfast",
+      note: "Served daily from 7am — Mon–Sat till 11am, Sun till 12pm",
+      daypart: "breakfast",
+      image: "assets/images/breakfast.jpg",
+      items: [
+        { name: "Breakfast Sandwich", price: "6.99", desc: "Choice of meat, cheese, bread — add smoked meats +$4" },
+        { name: "Breakfast By The Sea", price: "10.99", desc: "Fried or scrambled eggs, ham, bacon or sausage, white or wheat toast, hash browns" },
+        { name: "Naushon BLT", price: "9.99", desc: "Egg, bacon, lettuce, tomato, mayo on a croissant" },
+        { name: "Titanic", price: "9.99", desc: "Eggs, sausage, bacon, cheddar in a wrap" },
+        { name: "French Toast", price: "9.99", desc: "Classic French toast" },
+        { name: "Tashmoo", price: "9.99", desc: "Bagel, cream cheese, smoked salmon, capers, onion" },
+        { name: "Nye's Neck", price: "9.99", desc: "Avocado toast" },
+        { name: "Good Morning Burger", price: "11.99", desc: "Beef patty, bacon, sausage, capicola, cheddar, egg" },
+        { name: "Veggerito", price: "9.99", desc: "Eggs, cheddar, veggies in a tortilla" },
+        { name: "Boat House", price: "9.99", desc: "Eggs, sausage, peppers, onions, salsa, cheddar" },
+        { name: "Black Beach", price: "11.99", desc: "Eggs, steak, cheese, mayo on a bagel" },
+        { name: "Cape Cod Bagel w/ Cream Cheese", price: "4.99", desc: "Bagel varieties with cream cheese" }
+      ]
+    },
+    {
+      id: "cold-sandwiches",
+      name: "Cold Sandwiches",
+      note: "",
+      daypart: "always",
+      image: "assets/images/cold-sandwiches.jpg",
+      items: [
+        { name: "Italian", price: "11.99", desc: "Italian meats, provolone, vegetables on a sub" },
+        { name: "Chappy", price: "11.99", desc: "Roast beef, American cheese, white sauce" },
+        { name: "Nobska BLT", price: "13.99", desc: "Bacon, lettuce, tomato, avocado, croissant" },
+        { name: "Gobbler", price: "11.99", desc: "Turkey, stuffing, cranberry, mayo" },
+        { name: "Woods Hole Wrap", price: "11.99", desc: "Turkey, ham, cheddar, BBQ sauce" },
+        { name: "West Falmouth", price: "12.99", desc: "Smoked turkey, provolone, vegetables" },
+        { name: "Snug Harbor", price: "11.99", desc: "Greek veggie wrap" },
+        { name: "Nemasket", price: "11.99", desc: "Hummus and tabouli wrap" },
+        { name: "Bay Shores", price: "11.99", desc: "Chicken Caesar wrap" },
+        { name: "Megansett", price: "12.99", desc: "Cranberry walnut chicken salad wrap" },
+        { name: "Penikese", price: "12.99", desc: "Chicken salad roll" },
+        { name: "Cuttyhunk", price: "12.99", desc: "Tuna salad sub" },
+        { name: "BBQ Chicken BLT", price: "13.99", desc: "Chicken BLT with BBQ" },
+        { name: "Caprese", price: "8.99", desc: "Mozzarella, tomato, basil" },
+        { name: "Turkey Club", price: "13.99", desc: "Turkey club" },
+        { name: "The Knob", price: "11.99", desc: "Ham, Swiss, garlic aioli" }
+      ]
+    },
+    {
+      id: "hot-sandwiches",
+      name: "Hot Sandwiches",
+      note: "",
+      daypart: "always",
+      image: "assets/images/hot-sandwiches.jpg",
+      items: [
+        { name: "Wild Harbor", price: "14.99", desc: "Smoked brisket, onions, BBQ" },
+        { name: "Nauset", price: "12.99", desc: "Pulled pork and coleslaw" },
+        { name: "Woodneck", price: "14.99", desc: "Smoked pastrami, Swiss, coleslaw" },
+        { name: "Little Island", price: "12.99", desc: "Meatball sub" },
+        { name: "Santuit", price: "12.99", desc: "Sausage, peppers, onions" },
+        { name: "Quissett", price: "13.99", desc: "Cajun turkey, BBQ, cheddar" },
+        { name: "Cape Cod Cuban", price: "12.99", desc: "Pulled pork, ham, Swiss" },
+        { name: "Steak & Cheese", price: "11.99", desc: "Rib eye and American cheese" },
+        { name: "Philly Cheese Steak", price: "11.99", desc: "Rib eye with vegetables" },
+        { name: "Seaside Steak Bomb", price: "12.99", desc: "Rib eye, pepperoni, vegetables" },
+        { name: "Old Silver", price: "10.99", desc: "Chicken and vegetables" },
+        { name: "Nashawena", price: "11.99", desc: "Chicken bacon wrap" },
+        { name: "Bourne Farm", price: "9.99", desc: "Ham, cheddar, apple" },
+        { name: "Bowerman's", price: "11.99", desc: "Breaded chicken BLT ranch" },
+        { name: "Old Dock", price: "12.99", desc: "Chicken parm sub" },
+        { name: "Jetty", price: "12.99", desc: "Buffalo chicken sandwich" },
+        { name: "Pine Bay", price: "9.99", desc: "Veggie wrap" },
+        { name: "Pat Lafrieda All Beef Hot Dog", price: "3.99", desc: "Hot dog" },
+        { name: "Reuben", price: "14.99", desc: "Corned beef reuben" },
+        { name: "Tuna Melt", price: "12.99", desc: "Tuna and cheese on rye" }
+      ]
+    },
+    {
+      id: "signature",
+      name: "Signature",
+      note: "",
+      daypart: "always",
+      image: "assets/images/signature.jpg",
+      items: [
+        { name: "Fiddler's Cove", price: "14.99", desc: "Italian cured meats and mozzarella" }
+      ]
+    },
+    {
+      id: "burgers",
+      name: "Burgers",
+      note: "",
+      daypart: "always",
+      image: "assets/images/burgers.jpg",
+      items: [
+        { name: "The Original Burger", price: "10.99", desc: "House burger" },
+        { name: "Smoke House Burger", price: "15.99", desc: "Pulled pork, brisket, bacon" },
+        { name: "Wally's Blue Cheese Burger", price: "12.99", desc: "Burger with blue cheese" },
+        { name: "Veggie Burger", price: "10.99", desc: "Black bean corn burger" },
+        { name: "Cheese-Burger Sub", price: "15.99", desc: "Burger sub" },
+        { name: "Mushroom Swiss Burger", price: "11.99", desc: "Mushroom Swiss burger" }
+      ]
+    },
+    {
+      id: "new-york-deli",
+      name: "New York Deli",
+      note: "",
+      daypart: "always",
+      image: "assets/images/new-york-deli.jpg",
+      items: [
+        { name: "Pastrami", price: "24.99", desc: "12 oz. pastrami, rye" },
+        { name: "Corned Beef", price: "24.99", desc: "12 oz. corned beef, rye" }
+      ]
+    },
+    {
+      id: "kids",
+      name: "Kids",
+      note: "",
+      daypart: "always",
+      image: "assets/images/kids.jpg",
+      items: [
+        { name: "Peanut Butter and Jelly", price: "5.99", desc: "" },
+        { name: "Peanut Butter and Fluff", price: "5.99", desc: "" },
+        { name: "Grilled Cheese", price: "5.99", desc: "" }
+      ]
+    }
+  ],
+
+  promos: [
+    { id: "p1", active: false, mode: "ribbon", badge: "Today Only", title: "Add your promo here", desc: "", price: "" },
+    { id: "p2", active: false, mode: "slide", badge: "Limited Time", title: "Full-slide promo example", desc: "Use the gear icon to edit this, or add a new one", price: "" }
+  ]
+};
