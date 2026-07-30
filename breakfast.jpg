@@ -1,0 +1,412 @@
+/* ============================================================
+   WEST FALMOUTH MARKET — DELI BOARD APP
+   ============================================================ */
+const STORAGE_KEY = 'wfm_deli_board_v2';
+
+let data = loadData();
+let slides = [];
+let current = 0;
+let timer = null;
+let paused = false;
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(BOARD_DATA));
+}
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+/* ---------------- daypart logic ---------------- */
+function toMinutes(hhmm){
+  const [h,m] = (hhmm||'0:0').split(':').map(Number);
+  return h*60+(m||0);
+}
+function isBreakfastWindow(now){
+  const dp = data.settings.daypart;
+  const day = now.getDay(); // 0 = Sunday
+  const mins = now.getHours()*60 + now.getMinutes();
+  const start = toMinutes(dp.breakfastStart);
+  const end = toMinutes(day===0 ? dp.breakfastEndSunday : dp.breakfastEndWeekday);
+  return mins >= start && mins < end;
+}
+function currentDaypartLabel(){
+  const h = new Date().getHours();
+  if(h < 11) return 'Good Morning';
+  if(h < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+/* ---------------- slide building ---------------- */
+function esc(str){
+  return (str||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function visibleCategories(){
+  const now = new Date();
+  const inBreakfast = isBreakfastWindow(now);
+  return data.categories.filter(cat=>{
+    if(cat.daypart === 'breakfast' && data.settings.daypart.hideBreakfastOutsideWindow){
+      return inBreakfast;
+    }
+    return true;
+  });
+}
+
+function buildSlides(){
+  const s = [];
+  if(data.settings.showWelcome) s.push({ type:'welcome' });
+
+  const slidePromos = data.promos.filter(p=>p.active && p.mode==='slide');
+  let promoCursor = 0, sinceLastPromo = 0;
+  const freq = Math.max(1, data.settings.promoFrequency||3);
+
+  visibleCategories().forEach(cat=>{
+    s.push({ type:'category', cat });
+    sinceLastPromo++;
+    if(slidePromos.length && sinceLastPromo>=freq){
+      s.push({ type:'promo', promo: slidePromos[promoCursor % slidePromos.length] });
+      promoCursor++; sinceLastPromo=0;
+    }
+  });
+  if(!s.length) s.push({ type:'welcome' });
+  return s;
+}
+
+function columnsFor(count){
+  if(count<=3) return 1;
+  if(count<=8) return 2;
+  if(count<=15) return 3;
+  return 4;
+}
+
+function renderSlideHTML(slide){
+  if(slide.type==='welcome'){
+    return `<div class="slide welcome">
+      <img src="assets/logo.png" alt="West Falmouth Market">
+      <div class="greeting">${esc(currentDaypartLabel())}</div>
+      <div class="tagline">Boar's Head meats, fresh-baked bread &amp; house-smoked everything &mdash; sliced, stacked and ready for you.</div>
+    </div>`;
+  }
+  if(slide.type==='promo'){
+    const p = slide.promo;
+    return `<div class="slide promo-slide">
+      <div class="badge">${esc(p.badge||'Special')}</div>
+      <h1>${esc(p.title||'')}</h1>
+      ${p.desc?`<p>${esc(p.desc)}</p>`:''}
+      ${p.price?`<div class="price">${esc(p.price)}</div>`:''}
+    </div>`;
+  }
+
+  const cat = slide.cat;
+  const items = cat.items || [];
+  const solo = items.length <= 4 && cat.image;
+  const cols = solo ? 1 : columnsFor(items.length);
+
+  const itemHTML = items.map(it=>`
+    <div class="item">
+      <div class="top-row"><h3>${esc(it.name)}</h3><span class="price">$${esc(it.price)}</span></div>
+      ${it.desc?`<p>${esc(it.desc)}</p>`:''}
+    </div>`).join('');
+
+  const photoPanel = cat.image ? `<div class="photo-panel">
+      <img src="${esc(cat.image)}" alt="${esc(cat.name)}" onerror="this.closest('.photo-panel').style.display='none'; this.closest('.cat-body').classList.remove('solo'); this.closest('.slide').classList.remove('has-photo');">
+      <div class="caption">${esc(cat.name)}</div>
+    </div>` : '';
+
+  const bgStyle = cat.image ? ` style="--slide-photo:url('${esc(cat.image)}')"` : '';
+  const hasPhotoClass = cat.image ? ' has-photo' : '';
+
+  return `<div class="slide${hasPhotoClass}" data-cat="${esc(cat.id)}"${bgStyle}>
+    <div class="cat-head">
+      <h1>${esc(cat.name)}</h1>
+      ${cat.note?`<div class="sub">${esc(cat.note)}</div>`:'<div class="rule"></div>'}
+    </div>
+    <div class="cat-body${solo?' solo':''}">
+      ${solo?photoPanel:''}
+      <div class="items-panel" style="--cols:${cols}">${itemHTML}</div>
+    </div>
+  </div>`;
+}
+
+function autoFitSlide(slideEl){
+  const panel = slideEl.querySelector('.items-panel');
+  if(!panel) return;
+  panel.style.setProperty('--fit', 1);
+  let fit = 1;
+  let guard = 0;
+  while(panel.scrollHeight > panel.clientHeight + 2 && fit > 0.5 && guard < 20){
+    fit -= 0.04;
+    panel.style.setProperty('--fit', fit.toFixed(2));
+    guard++;
+  }
+}
+
+function render(){
+  slides = buildSlides();
+  if(current >= slides.length) current = 0;
+  const stage = document.getElementById('stage');
+  stage.innerHTML = slides.map(renderSlideHTML).join('');
+  stage.style.transform = `translateX(-${current*100}vw)`;
+
+  stage.querySelectorAll('.slide[data-cat]').forEach(autoFitSlide);
+
+  const dots = document.getElementById('dots');
+  dots.innerHTML = slides.map((_,i)=>`<div class="dot ${i===current?'on':''}"></div>`).join('');
+
+  const ribbon = data.promos.find(p=>p.active && p.mode==='ribbon');
+  const wrap = document.getElementById('ribbonPennant');
+  if(ribbon){
+    wrap.classList.add('active');
+    document.getElementById('ribbonBadge').textContent = ribbon.badge || 'Promo';
+    document.getElementById('ribbonTitle').textContent = ribbon.title || '';
+  } else {
+    wrap.classList.remove('active');
+  }
+}
+
+function goTo(i){
+  current = ((i % slides.length) + slides.length) % slides.length;
+  document.getElementById('stage').style.transform = `translateX(-${current*100}vw)`;
+  document.querySelectorAll('.dot').forEach((d,idx)=>d.classList.toggle('on', idx===current));
+}
+function next(){ goTo(current+1); }
+
+function resetTimer(){
+  clearInterval(timer);
+  if(paused) return;
+  const secs = Math.max(4, data.settings.slideDurationSec||12);
+  timer = setInterval(next, secs*1000);
+}
+function togglePause(){
+  paused = !paused;
+  document.getElementById('pausePill').classList.toggle('show', paused);
+  resetTimer();
+}
+document.getElementById('stage').addEventListener('click', togglePause);
+
+/* re-check daypart + rebuild slides once a minute, so breakfast
+   drops off the board automatically at closing time */
+setInterval(()=>{
+  const before = JSON.stringify(slides.map(s=>s.type + (s.cat?s.cat.id:'')));
+  const after = JSON.stringify(buildSlides().map(s=>s.type + (s.cat?s.cat.id:'')));
+  if(before !== after){ current = 0; render(); resetTimer(); }
+}, 60*1000);
+
+/* clock */
+function tickClock(){
+  const now = new Date();
+  const time = now.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  const date = now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  document.getElementById('clock').innerHTML = `${time}<span class="date">${date}</span>`;
+}
+tickClock();
+setInterval(tickClock, 15000);
+
+/* ============================================================
+   EDIT MODAL
+   ============================================================ */
+const modalBackdrop = document.getElementById('modalBackdrop');
+document.getElementById('editFab').addEventListener('click', openModal);
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('doneBtn').addEventListener('click', closeModal);
+document.addEventListener('keydown', e=>{
+  if(e.key.toLowerCase()==='e' && !modalBackdrop.classList.contains('show')) openModal();
+  if(e.key==='Escape') closeModal();
+});
+
+function openModal(){
+  modalBackdrop.classList.add('show');
+  renderCategoryEditor(); renderPromoEditor(); renderSettingsEditor();
+}
+function closeModal(){
+  modalBackdrop.classList.remove('show');
+  saveData();
+  current = 0; render(); resetTimer();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pane-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---- category / item editor ---- */
+function slugify(str){
+  return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'category';
+}
+function renderCategoryEditor(){
+  const wrap = document.getElementById('categoryList');
+  wrap.innerHTML = data.categories.map((cat,ci)=>`
+    <div class="cat-block" data-ci="${ci}">
+      <div class="cat-block-head">
+        <input type="text" class="catname" value="${esc(cat.name)}" data-role="catname" />
+        <button class="btn ghost small" data-action="movecatup">↑</button>
+        <button class="btn ghost small" data-action="movecatdown">↓</button>
+        <button class="btn danger small" data-action="delcat">Delete category</button>
+      </div>
+      <div class="cat-meta-row">
+        <input type="text" value="${esc(cat.note||'')}" placeholder="Category note (optional)" data-role="catnote" style="flex:1;" />
+        <input type="text" value="${esc(cat.image||'')}" placeholder="Image path (assets/images/name.jpg)" data-role="catimage" style="flex:1;" />
+        <select data-role="catdaypart">
+          <option value="always" ${cat.daypart!=='breakfast'?'selected':''}>Always show</option>
+          <option value="breakfast" ${cat.daypart==='breakfast'?'selected':''}>Breakfast hours only</option>
+        </select>
+      </div>
+      <div data-role="items">
+        ${cat.items.map((it,ii)=>`
+          <div class="item-row" data-ii="${ii}">
+            <input type="text" value="${esc(it.name)}" data-role="itemname" placeholder="Name" />
+            <textarea data-role="itemdesc" placeholder="Description">${esc(it.desc||'')}</textarea>
+            <input type="text" value="${esc(it.price)}" data-role="itemprice" placeholder="Price" />
+            <div class="row-actions">
+              <button class="btn ghost small" data-action="moveitemup">↑</button>
+              <button class="btn ghost small" data-action="moveitemdown">↓</button>
+              <button class="btn danger small" data-action="delitem">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn small" data-action="additem" style="margin-top:1vh;">+ Add item</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('.cat-block').forEach(block=>{
+    const ci = +block.dataset.ci;
+    block.querySelector('[data-role=catname]').addEventListener('input', e=>{ data.categories[ci].name = e.target.value; });
+    block.querySelector('[data-role=catnote]').addEventListener('input', e=>{ data.categories[ci].note = e.target.value; });
+    block.querySelector('[data-role=catimage]').addEventListener('input', e=>{ data.categories[ci].image = e.target.value; });
+    block.querySelector('[data-role=catdaypart]').addEventListener('change', e=>{ data.categories[ci].daypart = e.target.value; });
+    block.querySelectorAll('.item-row').forEach(row=>{
+      const ii = +row.dataset.ii;
+      row.querySelector('[data-role=itemname]').addEventListener('input', e=>{ data.categories[ci].items[ii].name = e.target.value; });
+      row.querySelector('[data-role=itemdesc]').addEventListener('input', e=>{ data.categories[ci].items[ii].desc = e.target.value; });
+      row.querySelector('[data-role=itemprice]').addEventListener('input', e=>{ data.categories[ci].items[ii].price = e.target.value; });
+      row.querySelector('[data-action=moveitemup]').addEventListener('click', ()=>moveItem(ci,ii,-1));
+      row.querySelector('[data-action=moveitemdown]').addEventListener('click', ()=>moveItem(ci,ii,1));
+      row.querySelector('[data-action=delitem]').addEventListener('click', ()=>{ data.categories[ci].items.splice(ii,1); renderCategoryEditor(); });
+    });
+    block.querySelector('[data-action=additem]').addEventListener('click', ()=>{
+      data.categories[ci].items.push({name:'New Item', desc:'', price:'0.00'}); renderCategoryEditor();
+    });
+    block.querySelector('[data-action=delcat]').addEventListener('click', ()=>{
+      if(confirm('Delete category "'+data.categories[ci].name+'" and all its items?')){ data.categories.splice(ci,1); renderCategoryEditor(); }
+    });
+    block.querySelector('[data-action=movecatup]').addEventListener('click', ()=>moveCategory(ci,-1));
+    block.querySelector('[data-action=movecatdown]').addEventListener('click', ()=>moveCategory(ci,1));
+  });
+}
+function moveItem(ci, ii, dir){
+  const arr = data.categories[ci].items; const j = ii+dir;
+  if(j<0 || j>=arr.length) return;
+  [arr[ii],arr[j]] = [arr[j],arr[ii]]; renderCategoryEditor();
+}
+function moveCategory(ci, dir){
+  const arr = data.categories; const j = ci+dir;
+  if(j<0 || j>=arr.length) return;
+  [arr[ci],arr[j]] = [arr[j],arr[ci]]; renderCategoryEditor();
+}
+document.getElementById('addCategoryBtn').addEventListener('click', ()=>{
+  const name = 'New Category';
+  data.categories.push({ id:slugify(name)+'-'+Date.now(), name, note:'', daypart:'always', image:'', items:[{name:'New Item', desc:'', price:'0.00'}] });
+  renderCategoryEditor();
+});
+
+/* ---- promo editor ---- */
+function renderPromoEditor(){
+  const wrap = document.getElementById('promoList');
+  wrap.innerHTML = data.promos.map((p,pi)=>`
+    <div class="promo-card" data-pi="${pi}">
+      <div class="promo-grid">
+        <div class="full toggle-row">
+          <label><input type="checkbox" data-role="active" ${p.active?'checked':''}/> Active</label>
+          <select data-role="mode">
+            <option value="ribbon" ${p.mode==='ribbon'?'selected':''}>Ribbon (small flag, every slide)</option>
+            <option value="slide" ${p.mode==='slide'?'selected':''}>Full slide (own turn in rotation)</option>
+          </select>
+        </div>
+        <div><span class="field-label">Badge / eyebrow</span><input type="text" data-role="badge" value="${esc(p.badge||'')}" placeholder="e.g. Today Only" /></div>
+        <div><span class="field-label">Price / offer</span><input type="text" data-role="price" value="${esc(p.price||'')}" placeholder="e.g. $3.50" /></div>
+        <div class="full"><span class="field-label">Title</span><input type="text" data-role="title" value="${esc(p.title||'')}" placeholder="Promo headline" /></div>
+        <div class="full"><span class="field-label">Details (full-slide promos only)</span><textarea data-role="desc" placeholder="Extra detail shown on a full promo slide">${esc(p.desc||'')}</textarea></div>
+      </div>
+      <button class="btn danger small" data-action="delpromo" style="margin-top:1vh;">Delete promo</button>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('.promo-card').forEach(card=>{
+    const pi = +card.dataset.pi;
+    card.querySelector('[data-role=active]').addEventListener('change', e=>{ data.promos[pi].active = e.target.checked; });
+    card.querySelector('[data-role=mode]').addEventListener('change', e=>{ data.promos[pi].mode = e.target.value; });
+    card.querySelector('[data-role=badge]').addEventListener('input', e=>{ data.promos[pi].badge = e.target.value; });
+    card.querySelector('[data-role=price]').addEventListener('input', e=>{ data.promos[pi].price = e.target.value; });
+    card.querySelector('[data-role=title]').addEventListener('input', e=>{ data.promos[pi].title = e.target.value; });
+    card.querySelector('[data-role=desc]').addEventListener('input', e=>{ data.promos[pi].desc = e.target.value; });
+    card.querySelector('[data-action=delpromo]').addEventListener('click', ()=>{ data.promos.splice(pi,1); renderPromoEditor(); });
+  });
+}
+document.getElementById('addPromoBtn').addEventListener('click', ()=>{
+  data.promos.push({ id:'promo'+Date.now(), active:true, mode:'ribbon', badge:'New', title:'New promo', desc:'', price:'' });
+  renderPromoEditor();
+});
+
+/* ---- settings editor ---- */
+function renderSettingsEditor(){
+  document.getElementById('setDuration').value = data.settings.slideDurationSec;
+  document.getElementById('setPromoFreq').value = data.settings.promoFrequency;
+  document.getElementById('setShowWelcome').value = data.settings.showWelcome ? '1':'0';
+  document.getElementById('setBreakfastStart').value = data.settings.daypart.breakfastStart;
+  document.getElementById('setBreakfastEndWeekday').value = data.settings.daypart.breakfastEndWeekday;
+  document.getElementById('setBreakfastEndSunday').value = data.settings.daypart.breakfastEndSunday;
+  document.getElementById('setHideBreakfast').checked = !!data.settings.daypart.hideBreakfastOutsideWindow;
+}
+document.getElementById('setDuration').addEventListener('input', e=>{ data.settings.slideDurationSec = +e.target.value || 12; });
+document.getElementById('setPromoFreq').addEventListener('input', e=>{ data.settings.promoFrequency = +e.target.value || 3; });
+document.getElementById('setShowWelcome').addEventListener('change', e=>{ data.settings.showWelcome = e.target.value === '1'; });
+document.getElementById('setBreakfastStart').addEventListener('input', e=>{ data.settings.daypart.breakfastStart = e.target.value; });
+document.getElementById('setBreakfastEndWeekday').addEventListener('input', e=>{ data.settings.daypart.breakfastEndWeekday = e.target.value; });
+document.getElementById('setBreakfastEndSunday').addEventListener('input', e=>{ data.settings.daypart.breakfastEndSunday = e.target.value; });
+document.getElementById('setHideBreakfast').addEventListener('change', e=>{ data.settings.daypart.hideBreakfastOutsideWindow = e.target.checked; });
+
+/* ---- backup ---- */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  saveData();
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'deli-board-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    try{
+      const parsed = JSON.parse(evt.target.result);
+      if(parsed && parsed.categories && parsed.settings && parsed.promos){
+        data = parsed; saveData();
+        renderCategoryEditor(); renderPromoEditor(); renderSettingsEditor();
+        alert('Backup imported.');
+      } else { alert("That file doesn't look like a valid backup."); }
+    }catch(err){ alert('Could not read that file: ' + err.message); }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset the whole board back to the default menu from data.js? This cannot be undone.')){
+    data = JSON.parse(JSON.stringify(BOARD_DATA)); saveData();
+    renderCategoryEditor(); renderPromoEditor(); renderSettingsEditor();
+  }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+render();
+resetTimer();
